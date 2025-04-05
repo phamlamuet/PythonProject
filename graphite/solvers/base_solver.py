@@ -29,7 +29,7 @@ import bittensor as bt
 from graphite.protocol import GraphV1Problem, GraphV2Problem, GraphV2ProblemMulti, GraphV2ProblemMultiConstrained
 from graphite.utils.graph_utils import valid_problem
 
-DEFAULT_SOLVER_TIMEOUT = 20
+DEFAULT_SOLVER_TIMEOUT = 200
 
 class BaseSolver(ABC):
     def __init__(self, problem_types:List[Union[GraphV1Problem, GraphV2Problem, GraphV2ProblemMulti, GraphV2ProblemMultiConstrained]]):

@@ -50,6 +50,54 @@ def visualize_mdcvrp(node_coords, depots, tours, title="Multi-Depot Capacitated 
     return plt
 
 
+def generate_hexaly_input_file(filename: str, n_nodes: int, m: int, depots: list,
+                               demand: list, constraint: list, node_coords: np.ndarray):
+    """
+    Generate a Hexaly input file for MDVRP based on solver data.
+
+    Args:
+        filename (str): Output file path (e.g., 'mdvrp_input.txt').
+        n_nodes (int): Total number of nodes (customers + depots).
+        m (int): Number of salesmen (vehicles), assumed as total across depots.
+        depots (list): List of depot indices.
+        demand (list): List of demands per node (0 for depots).
+        constraint (list): List of vehicle capacities per depot.
+        node_coords (np.ndarray): Array of [x, y] coordinates for all nodes.
+    """
+    # Calculate problem parameters
+    t = len(depots)  # Number of depots
+    n = n_nodes - t  # Number of customers
+    vehicles_per_depot = max(1, m // t)  # Distribute vehicles; adjust as needed
+    m_total = vehicles_per_depot * t  # Total vehicles
+
+    # Open file for writing
+    with open(filename, 'w') as f:
+        # First line: type m n t
+        f.write(f"2 {m_total} {n} {t}\n")
+
+        # Depot lines: D Q (one per depot)
+        for i, depot_capacity in enumerate(constraint):
+            f.write(f"0 {depot_capacity}\n")  # D = 0 (no duration limit), Q = capacity
+
+        # Customer and depot data lines: i x y d q f a list e l
+        customer_id = 1
+        for i in range(n_nodes):
+            if i in depots:
+                continue  # Skip depots for now, add them at the end
+            x, y = node_coords[i]
+            q = demand[i]
+            # i: customer number (1-based), d = 0, f = 1, a = 0, list = 0, e = 0, l = 1000
+            f.write(f"{customer_id} {x} {y} 0 {q} 1 0 0 0 1000\n")
+            customer_id += 1
+
+        # Add depots at the end (n+1 to n+t)
+        for j, depot_idx in enumerate(depots, start=n + 1):
+            x, y = node_coords[depot_idx]
+            q = demand[depot_idx]  # Should be 0, as set in your code
+            f.write(f"{j} {x} {y} 0 {q} 1 0 0 0 1000\n")
+
+    print(f"Hexaly input file generated: {filename}")
+
 class NearestNeighbourMultiSolver3(BaseSolver):
     '''
     This solver is a constructive nearest_neighbour algorithm that assigns cities to subtours based on the min increase in objective function value.
@@ -907,6 +955,18 @@ if __name__=="__main__":
 
     plt = visualize_mdcvrp(node_coords, depots, routes, title="dummy solution")
     plt.show()
+
+    #try to create hexaly input file here
+
+    generate_hexaly_input_file(
+        filename="mdvrp_input.txt",
+        n_nodes=n_nodes,
+        m=m,
+        depots=depots,
+        demand=demand,
+        constraint=constraint,
+        node_coords=node_coords
+    )
 
     best_routes = [
       [
